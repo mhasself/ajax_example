@@ -1,0 +1,16 @@
+ScriptAlias /ajex/cgi-bin/ /var/www/ajex/cgi-bin/
+<Directory "/var/www/ajex/cgi-bin">
+   AllowOverride None
+   Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+   Order allow,deny
+   Allow from all
+</Directory>
+
+Alias /ajex /var/www/ajex
+<Directory /var/www/ajex/>
+   Options +FollowSymLinks
+   AllowOverride All
+   Deny from all
+   Allow from localhost
+   satisfy Any
+</Directory>
