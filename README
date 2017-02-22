@@ -1,0 +1,96 @@
+Warning
+-------
+
+Use at your own risk -- cgi-bin is powerful and thus has many serious
+security implications.
+
+
+Installation
+------------
+
+This example was designed for an Ubuntu installation of apache2 (see
+discussion of Arch , below); maybe you can just run
+
+  sudo make install
+  sudo apache2ctl restart
+  
+and it will work.  You should probably check the paths at the top of
+Makefile and test.apache to confirm that they correspond to your
+system's web root.
+
+Then browse to http://localhost/ajex/test.php to see what has been
+installed.
+
+
+Debugging
+---------
+
+You should see a dumb web form at http://localhost/ajex/test.php.  If you
+don't, then the files are not getting installed into the right place
+for your web server.
+
+When the cgi-bin is working, you'll see a line with the date, and it
+will update whenever you click a Submit button.  If you see the form,
+but it doesn't "work", then the cgi-bin part of the web-server isn't
+working.  Browse to http://localhost/ajex/cgi-bin/test.py.  If you see
+the text of the python script, that's bad -- this is that security
+issue we warned (or will warn) you about.  When cgi-bin is working,
+your browser should print some JSON data, like:
+
+  {"date": "Wed Feb 22 09:30:39 2017", "also": "Button=None",
+   "message": "telescopes are 95"}
+
+
+Security
+--------
+
+There are many dangers associated with cgi-bin.  I think the two
+things that you should be really careful about, going forward, are:
+
+- Assume that the code you have in the cgi-bin directory will, at some
+  point, be readable by the public.  This means that you can't store
+  database passwords (and so on) in the scripts that live in your
+  cgi-bin directory.  Instead, have your cgi-bin executable, when it
+  is run, call or import or load those secrets from some other part of
+  the file-system that is not in the web server's DocumentRoot.
+
+- Always "sanitize" input data before "doing" anything with it.  The
+  degree of sanitization required depends on what you're doing with
+  it.  This includes "escaping" strings that you're passing into
+  database queries, or sanity checking inputs that you will be passing
+  to other executables.
+
+
+Arch Linux
+----------
+
+The default DocumentRoot for apache on Arch is /srv/http instead of
+/var/www.  And "virtual hosts" are often sorted in
+/etc/httpd/conf/vhosts.  So change the Makefile paths to say:
+
+  WEB_INSTALL=/srv/http/ajex
+  CGI_INSTALL=/srv/http/ajex/cgi-bin
+  CFG_INSTALL=/etc/httpd/conf/vhosts/ajex.conf
+
+Before you make install, edit test.apache (which will become
+ajex.conf) so it's talking about the right directories:
+
+  sed -i 's/var\/www/srv\/http/g' test.apache
+
+In the apache configuration, cgi scripts aren't enabled by default.
+To enable cgi-bin (note this is dangerous, you have been warned,
+etc.), edit /etc/httpd/conf/httpd.conf:
+
+  #LoadModule cgid_module modules/mod_cgid.so
+  #LoadModule cgi_module modules/mod_cgi.so
+
+and uncomment them.  You can also tell httpd to include your virtual
+host.  Somewhere near the end add:
+
+  Include conf/vhosts/ajex.conf
+
+Because python3 is the default on Arch, you will probably have to
+change the top line of test.py to invoke python2, i.e.
+
+  #!/usr/bin/env python2
+
